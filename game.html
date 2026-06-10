@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>힘과 운동의 방향 맞추기 게임</title>
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --secondary-color: #e24a4a;
+      --bg-color: #f5f7fa;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+    }
+
+    .container {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 650px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .progress {
+      height: 100%;
+      background: var(--primary-color);
+      width: 25%;
+      transition: width 0.3s ease;
+    }
+
+    /* 시각적 애니메이션 영역 */
+    .animation-arena {
+      width: 100%;
+      height: 180px;
+      background: #edf2f7;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 2px solid #cbd5e0;
+    }
+
+    .object {
+      position: absolute;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* 애니메이션 키프레임 정의 */
+    @keyframes drop {
+      0% { top: 10px; left: 50%; transform: translateX(-50%); animation-timing-function: ease-in; }
+      100% { top: 130px; left: 50%; transform: translateX(-50%); }
+    }
+    @keyframes brake {
+      0% { left: 10px; top: 70px; animation-timing-function: ease-out; }
+      100% { left: 450px; top: 70px; }
+    }
+    @keyframes upward {
+      0% { top: 130px; left: 50%; transform: translateX(-50%); animation-timing-function: ease-out; }
+      100% { top: 20px; left: 50%; transform: translateX(-50%); }
+    }
+    @keyframes push {
+      0% { left: 10px; top: 70px; animation-timing-function: ease-in; }
+      100% { left: 450px; top: 70px; }
+    }
+
+    .anim-apple { animation: drop 2s infinite; }
+    .anim-car { animation: brake 2s infinite; }
+    .anim-ball { animation: upward 2s infinite; }
+    .anim-cart { animation: push 2s infinite; }
+
+    .scenario-desc {
+      font-size: 1.1rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 5px solid var(--primary-color);
+    }
+
+    /* 방향 선택 버튼 영역 */
+    .selection-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .selection-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .row-title {
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .row-title.motion { color: var(--primary-color); }
+    .row-title.force { color: var(--secondary-color); }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .dir-btn {
+      background: #f1f3f5;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dir-btn span {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    /* 선택되었을 때의 스타일 */
+    .motion-group .dir-btn.active {
+      background-color: #e3faf2;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    .motion-group .dir-btn.active span { color: var(--primary-color); }
+
+    .force-group .dir-btn.active {
+      background-color: #fff5f5;
+      border-color: var(--secondary-color);
+      color: var(--secondary-color);
+    }
+    .force-group .dir-btn.active span { color: var(--secondary-color); }
+
+    /* 제출 버튼 */
+    .action-btn {
+      background: #2c3e50;
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #1a252f;
+    }
+
+    /* 모달 팝업 (피드백 결과 창) */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .modal-title.correct { color: #2ecc71; }
+    .modal-title.wrong { color: #e74c3c; }
+
+    .modal-explain {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    .modal-btn {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="game-screen">
+    <header>
+      <h1 id="title-text">힘과 운동의 방향</h1>
+      <p style="font-size: 0.85rem; color: #888;">중학교 1학년 과학 실습 웹앱</p>
+    </header>
+
+    <div class="progress-bar">
+      <div class="progress" id="progress-bar"></div>
+    </div>
+
+    <!-- 애니메이션 구역 -->
+    <div class="animation-arena">
+      <div class="object" id="moving-object">🍎</div>
+    </div>
+
+    <!-- 문제 설명 -->
+    <div class="scenario-desc" id="scenario-desc">
+      문제를 불러오는 중입니다...
+    </div>
+
+    <!-- 선택 버튼 구역 -->
+    <div class="selection-zone">
+      <!-- 운동 방향 선택 -->
+      <div class="selection-row">
+        <div class="row-title motion">1. 물체의 운동 방향을 고르세요:</div>
+        <div class="btn-group motion-group">
+          <button class="dir-btn" onclick="selectDirection('motion', 'up')">⬆️<span>위쪽</span></button>
+          <button class="dir-btn" onclick="selectDirection('motion', 'down')">⬇️<span>아래쪽</span></button>
+          <button class="dir-btn" onclick="selectDirection('motion', 'left')">⬅️<span>왼쪽</span></button>
+          <button class="dir-btn" onclick="selectDirection('motion', 'right')">➡️<span>오른쪽</span></button>
+        </div>
+      </div>
+
+      <!-- 힘의 방향 선택 -->
+      <div class="selection-row">
+        <div class="row-title force" id="force-title">2. 작용하는 힘의 방향을 고르세요:</div>
+        <div class="btn-group force-group">
+          <button class="dir-btn" onclick="selectDirection('force', 'up')">⬆️<span>위쪽</span></button>
+          <button class="dir-btn" onclick="selectDirection('force', 'down')">⬇️<span>아래쪽</span></button>
+          <button class="dir-btn" onclick="selectDirection('force', 'left')">⬅️<span>왼쪽</span></button>
+          <button class="dir-btn" onclick="selectDirection('force', 'right')">➡️<span>오른쪽</span></button>
+        </div>
+      </div>
+    </div>
+
+    <button class="action-btn" onclick="submitAnswer()">정답 확인하기</button>
+  </div>
+
+  <!-- 결과 모달 창 -->
+  <div class="modal" id="result-modal">
+    <div class="modal-content">
+      <div class="modal-title" id="modal-title">정답입니다! 🎉</div>
+      <div class="modal-explain" id="modal-explain">해설 영역입니다.</div>
+      <button class="modal-btn" onclick="closeModal()">다음 문제로</button>
+    </div>
+  </div>
+
+  <script>
+    // 시나리오 데이터 정의
+    const scenarios = [
+      {
+        emoji: "🍎",
+        title: "낙하하는 사과 (1 / 4)",
+        desc: "나무에서 사과가 아래로 떨어지고 있습니다. 이때 사과의 <strong>운동 방향</strong>과 작용하는 <strong>중력의 방향</strong>을 각각 골라보세요.",
+        motion: "down",
+        force: "down",
+        forceLabel: "2. 작용하는 중력의 방향을 고르세요:",
+        explain: "운동 방향(아래)과 힘의 방향(아래)이 일치하기 때문에 사과의 속력이 점점 빨라집니다.",
+        animClass: "anim-apple"
+      },
+      {
+        emoji: "🚗",
+        title: "급정거하는 자동차 (2 / 4)",
+        desc: "오른쪽으로 달리던 자동차가 브레이크를 밟아 서서히 멈추고 있습니다. 이때 자동차의 <strong>운동 방향</strong>과 타이어에 작용하는 <strong>마찰력의 방향</strong>을 골라보세요.",
+        motion: "right",
+        force: "left",
+        forceLabel: "2. 작용하는 마찰력의 방향을 고르세요:",
+        explain: "운동 방향(오른쪽)과 마찰력의 방향(왼쪽)이 반대이기 때문에 자동차의 속력이 점점 느려집니다.",
+        animClass: "anim-car"
+      },
+      {
+        emoji: "🏀",
+        title: "위로 올라가는 농구공 (3 / 4)",
+        desc: "농구공을 공중 위로 던졌습니다. 공이 위로 올라가고 있는 순간에 농구공의 <strong>운동 방향</strong>과 작용하는 <strong>중력의 방향</strong>을 골라보세요.",
+        motion: "up",
+        force: "down",
+        forceLabel: "2. 작용하는 중력의 방향을 고르세요:",
+        explain: "운동 방향(위)과 힘의 방향(아래)이 반대이기 때문에 올라갈수록 농구공의 속력이 느려집니다.",
+        animClass: "anim-ball"
+      },
+      {
+        emoji: "🛒",
+        title: "앞으로 미는 카트 (4 / 4)",
+        desc: "오른쪽으로 움직이고 있는 쇼핑 카트를 뒤에서 밀어 속력을 높이려고 합니다. 이때 카트의 <strong>운동 방향</strong>과 밀어주는 <strong>힘의 방향</strong>을 골라보세요.",
+        motion: "right",
+        force: "right",
+        forceLabel: "2. 밀어주는 힘의 방향을 고르세요:",
+        explain: "운동 방향(오른쪽)과 미는 힘의 방향(오른쪽)이 같기 때문에 카트의 속력이 점점 빨라집니다.",
+        animClass: "anim-cart"
+      }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let selectedMotion = null;
+    let selectedForce = null;
+
+    // 초기화 및 문제 로드
+    function loadScenario() {
+      const scenario = scenarios[currentIdx];
+      
+      // 제목, 설명글, 진행바 업데이트
+      document.getElementById('title-text').innerText = scenario.title;
+      document.getElementById('scenario-desc').innerHTML = scenario.desc;
+      document.getElementById('force-title').innerText = scenario.forceLabel;
+      document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / scenarios.length) * 100}%`;
+
+      // 선택 상태 및 UI 클래스 초기화
+      selectedMotion = null;
+      selectedForce = null;
+      document.querySelectorAll('.dir-btn').forEach(btn => btn.classList.remove('active'));
+
+      // 애니메이션 오브젝트 변경 및 리로드
+      const obj = document.getElementById('moving-object');
+      obj.innerText = scenario.emoji;
+      obj.className = 'object'; // 기존 클래스 제거
+      
+      // 브라우저가 스타일 변화를 강제 리플로우(Reflow)하도록 유도하여 애니메이션을 확실히 리셋
+      void obj.offsetWidth; 
+      
+      obj.classList.add(scenario.animClass);
+    }
+
+    // 방향 버튼 클릭 핸들러
+    function selectDirection(type, direction) {
+      if (type === 'motion') {
+        selectedMotion = direction;
+        const buttons = document.querySelectorAll('.motion-group .dir-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        // 누른 버튼 활성화
+        event.currentTarget.classList.add('active');
+      } else {
+        selectedForce = direction;
+        const buttons = document.querySelectorAll('.force-group .dir-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+      }
+    }
+
+    // 정답 제출 핸들러
+    function submitAnswer() {
+      if (!selectedMotion || !selectedForce) {
+        alert('운동 방향과 힘의 방향을 모두 선택해 주세요!');
+        return;
+      }
+
+      const scenario = scenarios[currentIdx];
+      const isCorrect = (selectedMotion === scenario.motion && selectedForce === scenario.force);
+
+      const modal = document.getElementById('result-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalExplain = document.getElementById('modal-explain');
+
+      if (isCorrect) {
+        score++;
+        modalTitle.innerText = "정답입니다! 🎉";
+        modalTitle.className = "modal-title correct";
+      } else {
+        modalTitle.innerText = "아쉬워요! 💡";
+        modalTitle.className = "modal-title wrong";
+      }
+
+      // 설명 매핑
+      const arrowMap = { up: "위쪽(⬆️)", down: "아래쪽(⬇️)", left: "왼쪽(⬅️)", right: "오른쪽(➡️)" };
+      let userAnsText = `<p style="margin-bottom:10px;">내가 고른 답:<br>운동 방향: <b>${arrowMap[selectedMotion]}</b> / 힘의 방향: <b>${arrowMap[selectedForce]}</b></p>`;
+      let correctAnsText = `<p style="margin-bottom:15px; color:#2c3e50;">실제 답:<br>운동 방향: <b>${arrowMap[scenario.motion]}</b> / 힘의 방향: <b>${arrowMap[scenario.force]}</b></p>`;
+      
+      modalExplain.innerHTML = userAnsText + correctAnsText + `<p style="font-weight:bold; color:#555;">[설명]</p>` + scenario.explain;
+      modal.style.display = 'flex';
+    }
+
+    // 모달 닫기 및 다음 스테이지로
+    function closeModal() {
+      document.getElementById('result-modal').style.display = 'none';
+      currentIdx++;
+
+      if (currentIdx < scenarios.length) {
+        loadScenario();
+      } else {
+        // 게임 오버 처리
+        showFinalResult();
+      }
+    }
+
+    // 최종 결과 출력
+    function showFinalResult() {
+      const container = document.getElementById('game-screen');
+      container.innerHTML = `
+        <header style="text-align: center; margin-bottom: 30px;">
+          <h1>학습 완료! 🏁</h1>
+          <p style="font-size: 1rem; color: #555; margin-top:10px;">수고하셨습니다!</p>
+        </header>
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color);">
+            점수: ${score} / ${scenarios.length}
+          </div>
+          <p style="margin-top: 15px; line-height: 1.6; color: #666;">
+            힘과 운동 방향이 같으면 <b>속력이 빨라지고</b>,<br>
+            힘과 운동 방향이 서로 반대이면 <b>속력이 느려집니다</b>.<br>
+            이 핵심 개념을 잊지 마세요!
+          </p>
+        </div>
+        <button class="action-btn" onclick="location.reload()">처음부터 다시하기</button>
+      `;
+    }
+
+    // 첫 문제 실행
+    window.onload = loadScenario;
+  </script>
+</body>
+</html>
